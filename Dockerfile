@@ -1,4 +1,4 @@
-FROM openanalytics/r-ver:4.3.3
+FROM openanalytics/r-ver:4.4.2
 
 LABEL maintainer="Adam Sadowski <asadowsk@uoguelph.ca>"
 
@@ -13,20 +13,12 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
     zlib1g-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# pin renv version
-ENV RENV_VERSION 1.0.5
-RUN R -q -e "options(warn=2); install.packages('remotes')"
-RUN R -q -e "options(warn=2); remotes::install_version('renv', '${RENV_VERSION}')"
+WORKDIR project
+COPY renv.lock renv.lock
 
-# install R dependencies
-# do this before copying the app-code, to ensure this layer is cached
-WORKDIR /build
-COPY snow/renv.lock /build/renv.lock
-RUN R -q -e 'options(warn=2); renv::restore()'
-
-# install R code
-COPY snow /app
-WORKDIR /app
+RUN R -q -e 'install.packages("renv")'
+RUN R -q -e 'renv::init(bare = TRUE)'
+RUN R -q -e 'renv::restore()'
 
 EXPOSE 3838
 
